@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>NDZ Monitor</title>
+	<!link rel="style" href="/static/style.css"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+		  integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+	<link rel="shortcut icon" type="image/x-icon" href="/static/images/favicon.ico"/>
+	<style>
+		.body {
+			display: flex;
+		}
+
+		.header_comment {
+			overflow: hidden;
+
+			background-color: #141247;
+			color: #f2f2f2;
+			text-align: left;
+			padding: 10px 5px;
+			text-decoration: none;
+			justify-content: space-between;
+		}
+
+		.basic_info {
+		    justify-content: space-between;
+		    padding: 10px 5px;
+		    background-color: #D9D9E7;
+		}
+
+		.monitoring_results {
+			justify-content: space-between;
+		    padding: 10px 5px;
+		    background-color: #D9D9E7;
+		}
+	</style>
+</head>
+<body>
+
+	<div class = "header_comment">
+		<h2><b>No fly zone monitor : Drones over the bird nest</b></h2>
+	</div>
+
+	<div class = "basic_info">
+		<h3>Monitoring zone basic information</h3>
+		<table>
+			<tr>
+				<td>Monitoring Area</td>
+				<td>: 500mx500m</td>
+			</tr>
+			<tr>
+				<td>Snapshot Frequency</td>
+				<td>: 0.5Hz</td>
+			</tr>
+			<tr>
+				<td>No Fly Zone Radius</td>
+				<td>: 100m</td>
+			</tr>
+		</table>
+	</div>
+
+	<div class = "monitoring_results">
+		<h3>Monitoring summery</h3>
+		<table>
+			<tr>
+				<td><b>As updated at</b></td>
+				<td id="last_updated"></td>
+			</tr>
+			<tr>
+				<td>No of drones under monitoring</td>
+				<td id="drones_monit"></td>
+			</tr>
+			<tr>
+				<td>No of drones inside the NDZ</td>
+				<td  id="drones_in"></td>
+			</tr>
+			<tr>
+				<td>No of violators within last 10min</td>
+				<td id="violators_ten_min"></td>
+			</tr>
+			<tr>
+				<td><b>Details of pilots violated the NDZ within last 10min</b></td>
+			</tr>
+		</table>
+	</div>
+
+	<div id="table_of_list">
+		<table class="table table-bordered">
+			<thead class="table-dark">
+				<tr>
+					<th scope="col">First Name</th>
+					<th scope="col">Last Name</th>
+					<th scope="col">Phone</th>
+					<th scope="col">Email</th>
+					<th scope="col">Last Detected</th>
+					<th scope="col">Closest Dist. to the Nest (m)</th>
+				</tr>
+			</thead>
+			<tbody id="pilotListTableBody">
+			</tbody>
+		</table>
+	</div>
+
+	<script>
+		window.setInterval(function(){
+			fetchTableData();
+			fetchSummeryData();
+
+			}, 2000);
+
+		function fetchTableData(){
+			fetch("/UpdateList").then((PilotsList)=>{
+				console.log("latest list of violating pilots taken from the API..")
+				console.log(PilotsList);
+				ListObject = PilotsList.json(); //converting to an object
+				console.log(ListObject)
+				return ListObject;
+			}).then((ListObject)=>{
+				let tableData="";
+				ListObject.map((values)=>{
+					tableData+="<tr><td>"+values.firstName+"</td><td>"+values.lastName+"</td><td>"+values.phone+"</td><td>"+values.email+"</td><td>"+values.time+"</td><td>"+values.closestDist+"</td></tr>";
+				});
+				document.getElementById("pilotListTableBody").innerHTML=tableData;
+			}).catch((error)=>{
+				console.log(error);
+			})
+		}
+
+		function fetchSummeryData(){
+			fetch("/Summery").then((summery)=>{
+				console.log("latest summery taken from the API..")
+				console.log(summery);
+				SummeryObject = summery.json(); //converting to an object
+				console.log(SummeryObject)
+				return SummeryObject;
+			}).then((SummeryObject)=>{
+				let lastUpdated = ": " + SummeryObject.lastConnected;
+				let dronesMonitoring = ": " + SummeryObject.noOfMonitoring;
+				let dronesInside = ": " + SummeryObject.noOfInside;
+				let noOfViolators = ": " + SummeryObject.noWithinTenMin;
+				document.getElementById("last_updated").innerHTML=lastUpdated;
+				document.getElementById("drones_monit").innerHTML=dronesMonitoring;
+				document.getElementById("drones_in").innerHTML=dronesInside;
+				document.getElementById("violators_ten_min").innerHTML=noOfViolators;
+			}).catch((error)=>{
+				console.log(error);
+			})
+		}
+	</script>
+</body>
+</html>
